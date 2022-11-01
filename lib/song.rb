@@ -8,6 +8,7 @@ class Song
     @album = album
   end
 
+
   def self.drop_table
     sql = <<-SQL
       DROP TABLE IF EXISTS songs
@@ -49,4 +50,34 @@ class Song
     song.save
   end
 
+  #One thing to know is that the database, SQLite in our case, will return an array of data for each row.
+  def self.new_from_db(row)
+    # self.new is equivalent to Song.new
+    self.new(id: row[0], name: row[1], album: row[2])
+  end
+
+  def self.all
+    sql = <<-SQL
+      SELECT *
+      FROM songs
+    SQL
+    #This will return an array of rows from the database that matches our query
+    DB[:conn].execute(sql).map do |row|
+      self.new_from_db(row)
+    end
+  end
+
+  def self.find_by_name(name)
+    sql = <<-SQL
+      SELECT *
+      FROM songs
+      WHERE name = ?
+      LIMIT 1
+    SQL
+    #The return value of the #map method is an array, and we're simply grabbing the #first element from the returned array. Chaining is cool!
+    #iterate over each row and use the self.map method to create a new Ruby object for each row
+    DB[:conn].execute(sql, name).map do |row|
+      self.new_from_db(row)
+    end.first
+  end
 end
